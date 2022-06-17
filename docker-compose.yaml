@@ -1,0 +1,73 @@
+version: '3'
+services:
+  rest-nginx:
+    build:
+      context: "./docker/dev"
+      dockerfile: "nginx.docker"
+    container_name: "nginx-rest"
+    volumes:
+    - "./web-app:/container-app"
+    depends_on:
+      - "rest-php-fpm"
+    ports:
+    - "7000:80"
+    networks:
+      - "network"
+
+  xml-nginx:
+    image: nginx:1.17.1-alpine
+    working_dir: "/xml"
+    container_name: "nginx-xml"
+    volumes:
+      - "./docker/dev/nginx/xml:/etc/nginx/conf.d"
+      - "./xml:/xml/public"
+    ports:
+      - "8000:80"
+    networks:
+      - "network"
+
+  rest-php-fpm:
+    build:
+      context: "./docker/dev"
+      dockerfile: "php-fpm.docker"
+    container_name: "php-fpm-rest"
+    volumes:
+    - "./web-app:/container-app"
+    depends_on:
+      - "rest-mysql"
+    networks:
+      - "network"
+
+  rest-mysql:
+    image: mysql:8
+    container_name: "mysql-rest"
+    volumes:
+      - "./docker/db:/var/lib/mysql"
+    environment:
+      MYSQL_DATABASE: "app"
+      MYSQL_USER: "air_user"
+      MYSQL_PASSWORD: "1234567"
+      MYSQL_ROOT_PASSWORD: "7root7"
+    ports:
+      - "3306:3306"
+    networks:
+      - "network"
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: "phpmyadmin-rest"
+    restart: "always"
+    ports:
+      - "3000:80"
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=lmp-mysql
+      - PMA_PORTS=3306
+      - PMA_USER=root
+      - PMA_PASSWORD=root
+    networks:
+      - "network"
+
+networks:
+  network:
+    driver: bridge
